@@ -10,6 +10,7 @@ import 'package:posts/models/post.dart';
 import 'package:posts/widgets/toast.dart';
 import 'package:xid/xid.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -22,9 +23,19 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final _auth = FirebaseAuth.instance;
   final FirebaseStorage storage = FirebaseStorage.instance;
   final _db = FirebaseFirestore.instance;
+  bool _creatingPost = false;
   File? _selectedImage;
   bool _imageIsFullWidth = true;
   String _postText = "";
+
+  final circularLoader = const SizedBox(
+    width: 24,
+    height: 24,
+    child: CircularProgressIndicator(
+      color: kPrimary,
+      strokeWidth: 2,
+    ),
+  );
 
   Future<void> _openImagePicker() async {
     final XFile? pickedImage =
@@ -44,32 +55,30 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   void _handleCreatePost() async {
     try {
-      print("loading");
+      setState(() {
+        _creatingPost = true;
+      });
       final String postId = Xid().toString();
       String postPhotoUrl = "";
 
       if (_selectedImage != null) {
-        final Reference photoRef = storage.ref(postId);
-        await photoRef
-            .putFile(
+        final Reference photoRef = storage.ref(postId).child("postPhoto");
+        await photoRef.putFile(
           _selectedImage!,
-        )
-            .catchError((error) {
-          print(error);
-        });
+        );
 
         postPhotoUrl = await photoRef.getDownloadURL();
       }
 
       Post createdPost = Post(
-        postId: postId,
-        postText: _postText,
-        postImage: postPhotoUrl,
-        postOwnerId: _auth.currentUser!.uid,
-        postTime: Timestamp.now(),
-        likeCount: 0,
-        postComments: [],
-      );
+          postId: postId,
+          postText: _postText,
+          postImage: postPhotoUrl,
+          postOwnerId: _auth.currentUser!.uid,
+          postTime: Timestamp.now(),
+          likeCount: 0,
+          postComments: [],
+          postLikes: []);
 
       await _db
           .collection("posts")
@@ -83,7 +92,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
         Navigator.pop(context);
       }).catchError((error) {
-        print(error);
         ScaffoldMessenger.of(context).showSnackBar(
           Toast(
             toastType: ToastType.descructive,
@@ -92,7 +100,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         );
       });
     } catch (e) {
-      print(e);
       ScaffoldMessenger.of(context).showSnackBar(
         Toast(
           toastType: ToastType.descructive,
@@ -100,139 +107,147 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ),
       );
     } finally {
-      print("completed");
+      setState(() {
+        _creatingPost = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: kBackground,
-      appBar: AppBar(
-        backgroundColor: kWhite,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            color: kLines,
-            height: 1,
-          ),
-        ),
-        actions: [
-          Visibility(
-            visible: _postText.isNotEmpty || _selectedImage != null,
-            child: GestureDetector(
-              onTap: () {
-                _handleCreatePost();
-              },
-              child: Container(
-                alignment: Alignment.center,
-                height: 32,
-                width: 64,
-                margin: const EdgeInsets.only(right: 16),
-                decoration: BoxDecoration(
-                  color: kPrimary,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Text(
-                  "Post",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                    color: kWhite,
-                    wordSpacing: 1.2,
-                  ),
-                ),
-              ),
+    return ModalProgressHUD(
+      inAsyncCall: _creatingPost,
+      color: Colors.black,
+      opacity: 0.5,
+      progressIndicator: circularLoader,
+      child: Scaffold(
+        backgroundColor: kBackground,
+        appBar: AppBar(
+          backgroundColor: kWhite,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Container(
+              color: kLines,
+              height: 1,
             ),
-          )
-        ],
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                children: [
-                  const SizedBox(
-                    height: 16,
+          ),
+          actions: [
+            Visibility(
+              visible: _postText.isNotEmpty || _selectedImage != null,
+              child: GestureDetector(
+                onTap: () {
+                  _handleCreatePost();
+                },
+                child: Container(
+                  alignment: Alignment.center,
+                  height: 32,
+                  width: 64,
+                  margin: const EdgeInsets.only(right: 16),
+                  decoration: BoxDecoration(
+                    color: kPrimary,
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  TextField(
-                    maxLines: null,
-                    autofocus: true,
-                    cursorColor: kPrimary,
-                    maxLength: 280,
-                    onChanged: (value) {
-                      setState(() {
-                        _postText = value;
-                      });
-                    },
-                    decoration: const InputDecoration(
-                      hintText: "Type here",
-                      contentPadding: EdgeInsets.all(0),
-                      counterText: "",
-                      border: OutlineInputBorder(
-                        borderSide: BorderSide.none,
-                      ),
+                  child: const Text(
+                    "Post",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: kWhite,
+                      wordSpacing: 1.2,
                     ),
                   ),
-                  const SizedBox(
-                    height: 16,
-                  ),
-                  Visibility(
-                    visible: _selectedImage != null,
-                    child: GestureDetector(
-                      onTap: () {
-                        _handleImageWidth();
-                      },
-                      child: Container(
-                        decoration: const BoxDecoration(color: kLines),
-                        alignment: Alignment.center,
-                        width: double.infinity,
-                        height: 300,
-                        child: _selectedImage != null
-                            ? Image.file(
-                                _selectedImage!,
-                                fit: _imageIsFullWidth
-                                    ? BoxFit.cover
-                                    : BoxFit.contain,
-                                width: double.infinity,
-                                height: double.infinity,
-                              )
-                            : null,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-              Container(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            )
+          ],
+        ),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
                   children: [
-                    GestureDetector(
-                      onTap: () {
-                        _openImagePicker();
+                    const SizedBox(
+                      height: 16,
+                    ),
+                    TextField(
+                      maxLines: null,
+                      autofocus: true,
+                      cursorColor: kPrimary,
+                      maxLength: 280,
+                      onChanged: (value) {
+                        setState(() {
+                          _postText = value;
+                        });
                       },
-                      child: SvgPicture.asset(
-                        "images/image.svg",
-                        semanticsLabel: "image",
-                        width: 18,
-                        height: 18,
+                      decoration: const InputDecoration(
+                        hintText: "Type here",
+                        contentPadding: EdgeInsets.all(0),
+                        counterText: "",
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                     ),
-                    Text(
-                      "${_postText.length} / 280",
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                    const SizedBox(
+                      height: 16,
+                    ),
+                    Visibility(
+                      visible: _selectedImage != null,
+                      child: GestureDetector(
+                        onTap: () {
+                          _handleImageWidth();
+                        },
+                        child: Container(
+                          decoration: const BoxDecoration(color: kLines),
+                          alignment: Alignment.center,
+                          width: double.infinity,
+                          height: 300,
+                          child: _selectedImage != null
+                              ? Image.file(
+                                  _selectedImage!,
+                                  fit: _imageIsFullWidth
+                                      ? BoxFit.cover
+                                      : BoxFit.contain,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                )
+                              : null,
+                        ),
                       ),
-                    )
+                    ),
                   ],
                 ),
-              )
-            ],
+                Container(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          _openImagePicker();
+                        },
+                        child: SvgPicture.asset(
+                          "images/image.svg",
+                          semanticsLabel: "image",
+                          width: 18,
+                          height: 18,
+                        ),
+                      ),
+                      Text(
+                        "${_postText.length} / 280",
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      )
+                    ],
+                  ),
+                )
+              ],
+            ),
           ),
         ),
       ),

@@ -5,6 +5,7 @@ class Post {
   factory Post.fromFirestore(DocumentSnapshot<Map<String, dynamic>> snapshot) {
     final data = snapshot.data();
     final postComments = data?["comment"];
+    final postLikes = data?["postLikes"];
     return Post(
       postId: data?["postId"],
       postText: data?["postText"],
@@ -12,6 +13,7 @@ class Post {
       postOwnerId: data?["postOwnerId"],
       postTime: data?["postTime"],
       likeCount: data?["likeCount"],
+      postLikes: postLikes,
       postComments:
           List<Comment>.from(postComments.map((e) => Comment.fromMap(e))),
     );
@@ -25,7 +27,8 @@ class Post {
       "postOwnerId": postOwnerId,
       "postTime": postTime,
       "likeCount": likeCount,
-      "postComments": postComments
+      "postComments": postComments,
+      "postLikes": postLikes,
     };
   }
 
@@ -37,6 +40,7 @@ class Post {
     required this.likeCount,
     required this.postComments,
     required this.postId,
+    required this.postLikes,
   });
 
   final String postId;
@@ -45,5 +49,6 @@ class Post {
   final String postOwnerId;
   List<Comment> postComments;
   int likeCount;
+  List<String> postLikes;
   final Timestamp postTime;
 }
