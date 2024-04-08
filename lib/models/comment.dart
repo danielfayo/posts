@@ -26,6 +26,6 @@ class Comment {
 
   final String commentId;
   final String commentText;
-  final String commentTime;
+  final int commentTime;
   final String commentOwnerId;
 }

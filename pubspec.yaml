@@ -45,6 +45,8 @@ flutter:
     - images/line-search.svg
     - images/line-home.svg
     - images/plus.svg
+    - images/comment.svg
+    - images/heart.svg
 
   # fonts:
   #   - family: Schyler

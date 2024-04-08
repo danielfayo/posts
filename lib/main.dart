@@ -3,11 +3,13 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:posts/firebase_options.dart';
+import 'package:posts/providers/posts_provider.dart';
 import 'package:posts/screens/auth_screen.dart';
 import 'package:posts/screens/posts_screen.dart';
 import 'package:posts/screens/profile_screen.dart';
 import 'package:posts/screens/search_screen.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,9 +26,12 @@ class PostsApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: ThemeData(textTheme: GoogleFonts.dmSansTextTheme()),
-      home: _auth.currentUser == null ? AuthScreen() : const HomeScreen(),
+    return ChangeNotifierProvider(
+      create: (context) => PostProvider(),
+      child: MaterialApp(
+        theme: ThemeData(textTheme: GoogleFonts.dmSansTextTheme()),
+        home: _auth.currentUser == null ? AuthScreen() : const HomeScreen(),
+      ),
     );
   }
 }

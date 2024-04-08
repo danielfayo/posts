@@ -7,7 +7,10 @@ import 'package:flutter_svg/svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:posts/constants/colors.dart';
 import 'package:posts/models/post.dart';
+import 'package:posts/providers/posts_provider.dart';
+import 'package:posts/widgets/circular_loader.dart';
 import 'package:posts/widgets/toast.dart';
+import 'package:provider/provider.dart';
 import 'package:xid/xid.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
@@ -27,15 +30,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   File? _selectedImage;
   bool _imageIsFullWidth = true;
   String _postText = "";
-
-  final circularLoader = const SizedBox(
-    width: 24,
-    height: 24,
-    child: CircularProgressIndicator(
-      color: kPrimary,
-      strokeWidth: 2,
-    ),
-  );
 
   Future<void> _openImagePicker() async {
     final XFile? pickedImage =
@@ -75,7 +69,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           postText: _postText,
           postImage: postPhotoUrl,
           postOwnerId: _auth.currentUser!.uid,
-          postTime: Timestamp.now(),
+          postTime: Timestamp.now().millisecondsSinceEpoch,
           likeCount: 0,
           postComments: [],
           postLikes: []);
@@ -85,6 +79,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           .doc(postId)
           .set(createdPost.toJson())
           .then((value) {
+            Provider.of<PostProvider>(context, listen: false).addPost(createdPost);
         Toast(
           toastType: ToastType.success,
           toastText: "Post sent",
@@ -119,7 +114,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       inAsyncCall: _creatingPost,
       color: Colors.black,
       opacity: 0.5,
-      progressIndicator: circularLoader,
+      progressIndicator: const CircularLoader(),
       child: Scaffold(
         backgroundColor: kBackground,
         appBar: AppBar(

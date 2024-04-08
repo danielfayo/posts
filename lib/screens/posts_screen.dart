@@ -1,13 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:posts/constants/colors.dart';
 import 'package:posts/models/comment.dart';
 import 'package:posts/models/post.dart';
 import 'package:posts/providers/posts_provider.dart';
-import 'package:posts/screens/auth_screen.dart';
 import 'package:posts/screens/create_post.dart';
+import 'package:posts/widgets/circular_loader.dart';
+import 'package:posts/widgets/post_item.dart';
+import 'package:posts/widgets/toast.dart';
 import 'package:provider/provider.dart';
 
 class PostsScreen extends StatefulWidget {
@@ -19,31 +20,51 @@ class PostsScreen extends StatefulWidget {
 
 class _PostsScreenState extends State<PostsScreen> {
   final _db = FirebaseFirestore.instance;
+  bool _fetchingPosts = false;
 
   void fetchPosts() async {
     try {
-      
-    
-    await _db.collection("posts").get().then((querySnapsot) {
-      for (var docSnapshot in querySnapsot.docs) {
-        final postsData = Post.fromFirestore(
-            docSnapshot as DocumentSnapshot<Map<String, dynamic>>);
-        List<Comment> comments = postsData.postComments;
-        Post post = Post(
-          postText: postsData.postText,
-          postImage: postsData.postImage,
-          postOwnerId: postsData.postOwnerId,
-          postTime: postsData.postTime,
-          likeCount: postsData.likeCount,
-          postComments: comments,
-          postId: postsData.postId,
-          postLikes: postsData.postLikes,
+      setState(() {
+        _fetchingPosts = true;
+      });
+
+      await _db.collection("posts").get().then((querySnapsot) {
+        for (var docSnapshot in querySnapsot.docs) {
+          final postsData = Post.fromFirestore(
+              docSnapshot as DocumentSnapshot<Map<String, dynamic>>);
+          List<Comment>? comments = postsData.postComments;
+          List<String>? postLikes = postsData.postLikes;
+          Post post = Post(
+            postText: postsData.postText,
+            postImage: postsData.postImage,
+            postOwnerId: postsData.postOwnerId,
+            postTime: postsData.postTime,
+            likeCount: postsData.likeCount,
+            postComments: comments,
+            postId: postsData.postId,
+            postLikes: postLikes,
+          );
+          Provider.of<PostProvider>(context, listen: false).addPost(post);
+        }
+      }, onError: (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          Toast(
+            toastType: ToastType.descructive,
+            toastText: "Something went wrong",
+          ),
         );
-        Provider.of<PostProvider>(context, listen: false).addPost(post);
-      }
-    });
+      });
     } catch (e) {
-      
+      ScaffoldMessenger.of(context).showSnackBar(
+        Toast(
+          toastType: ToastType.descructive,
+          toastText: "Something went wrong",
+        ),
+      );
+    } finally {
+      setState(() {
+        _fetchingPosts = false;
+      });
     }
   }
 
@@ -104,19 +125,43 @@ class _PostsScreenState extends State<PostsScreen> {
           ),
         ),
       ),
-      body: SafeArea(
-          child: Column(
-        children: [
-          GestureDetector(
-            onTap: () async {
-              await FirebaseAuth.instance.signOut();
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (context) => AuthScreen()));
+      body: SafeArea(child: Consumer<PostProvider>(
+        builder: (context, postData, child) {
+          if (_fetchingPosts) {
+            return const Center(
+              child: CircularLoader(),
+            );
+          }
+
+          return ListView.separated(
+            separatorBuilder: (context, index) {
+              return const SizedBox(
+                height: 16,
+              );
             },
-            child: Text("logout"),
-          )
-        ],
+            padding: const EdgeInsets.all(16),
+            itemBuilder: (context, index) {
+              return PostItem(
+                post: postData.posts[index],
+              );
+            },
+            itemCount: postData.posts.length,
+          );
+        },
       )),
     );
   }
 }
+
+// Column(
+//           children: [
+//             GestureDetector(
+//               onTap: () async {
+//                 await FirebaseAuth.instance.signOut();
+//                 Navigator.pushReplacement(context,
+//                     MaterialPageRoute(builder: (context) => AuthScreen()));
+//               },
+//               child: Text("logout"),
+//             )
+//           ],
+//         ),

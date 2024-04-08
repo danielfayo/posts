@@ -13,9 +13,9 @@ class Post {
       postOwnerId: data?["postOwnerId"],
       postTime: data?["postTime"],
       likeCount: data?["likeCount"],
-      postLikes: postLikes,
+      postLikes: postLikes is Iterable ? List<String>.from(postLikes) : null,
       postComments:
-          List<Comment>.from(postComments.map((e) => Comment.fromMap(e))),
+          postComments is Iterable ? List<Comment>.from(postComments.map((e) => Comment.fromMap(e))) : null,
     );
   }
 
@@ -47,8 +47,8 @@ class Post {
   final String postText;
   final String postImage;
   final String postOwnerId;
-  List<Comment> postComments;
+  List<Comment>? postComments;
   int likeCount;
-  List<String> postLikes;
-  final Timestamp postTime;
+  List<String>? postLikes;
+  final int postTime;
 }
