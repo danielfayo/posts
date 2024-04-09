@@ -12,8 +12,21 @@ class PostProvider extends ChangeNotifier {
 
   void addPost(Post newPost) {
     _posts.add(newPost);
-    // Future.microtask(() {
       notifyListeners();
-    // });
+  }
+
+  void likeOrUnlikePost(Post post, String uid){
+    if (post.postLikes == null){
+      post.likeCount+=1;
+      post.postLikes = [uid];
+    }
+    if (post.postLikes!.contains(uid)){
+      post.likeCount-=1;
+      post.postLikes!.remove(uid);
+    } else if (!post.postLikes!.contains(uid)){
+      post.likeCount+=1;
+      post.postLikes!.add(uid);
+    }
+    notifyListeners();
   }
 }
