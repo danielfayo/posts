@@ -4,9 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:posts/constants/colors.dart';
 import 'package:posts/models/post.dart';
-import 'package:posts/models/profile_details.dart';
 import 'package:posts/providers/posts_provider.dart';
+import 'package:posts/utilites/format_time.dart';
 import 'package:posts/utilites/get_profile_detals.dart';
+import 'package:posts/widgets/comment_modal.dart';
 import 'package:posts/widgets/toast.dart';
 import 'package:provider/provider.dart';
 
@@ -22,36 +23,8 @@ class PostItem extends StatefulWidget {
 class _PostItemState extends State<PostItem> {
   final _auth = FirebaseAuth.instance;
   final _db = FirebaseFirestore.instance;
-
-  String formatFromNow(int milliseconds) {
-    DateTime then = DateTime.fromMillisecondsSinceEpoch(milliseconds);
-    DateTime now = DateTime.now();
-    Duration difference = now.difference(then);
-
-    int seconds = difference.inSeconds;
-    int minutes = (seconds / 60).floor();
-    int hours = (minutes / 60).floor();
-    int days = (hours / 24).floor();
-    int weeks = (days / 7).floor();
-
-    String fromNowText;
-    if (weeks > 0) {
-      fromNowText = weeks == 1 ? '$weeks week ago' : '$weeks weeks ago';
-    } else if (days > 0) {
-      fromNowText = days == 1 ? '$days day ago' : '$days days ago';
-    } else if (hours > 0) {
-      fromNowText = hours == 1 ? '$hours hour ago' : '$hours hours ago';
-    } else if (minutes > 0) {
-      fromNowText =
-          minutes == 1 ? '$minutes minute ago' : '$minutes minutes ago';
-    } else if (seconds > 0) {
-      fromNowText =
-          seconds == 1 ? '$seconds second ago' : '$seconds seconds ago';
-    } else {
-      fromNowText = "Just now";
-    }
-    return fromNowText;
-  }
+  String _photoUrl = "";
+  String _name = "";
 
   Future<void> handleLikingPost(Post post, String uid) async {
     final postRef = _db.collection("posts").doc(post.postId);
@@ -79,6 +52,18 @@ class _PostItemState extends State<PostItem> {
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    getProfileDetails(widget.post.postOwnerId).then((value) {
+      setState(() {
+        _name = value.name;
+        _photoUrl = value.profilePhoto;
+      });
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -88,40 +73,34 @@ class _PostItemState extends State<PostItem> {
         border: Border.all(color: kLines, width: 1),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                FutureBuilder(
-                  future: getProfileDetails(widget.post.postOwnerId),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Text("");
-                    }
-                    ProfileDetails details = snapshot.data!;
-                    return Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8.0),
-                          child: Image.network(
-                            details.profilePhoto,
-                            height: 18,
-                            width: 18,
-                            fit: BoxFit.cover,
-                          ),
+                Visibility(
+                  visible: _photoUrl.isNotEmpty && _name.isNotEmpty,
+                  child: Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8.0),
+                        child: Image.network(
+                          _photoUrl,
+                          height: 18,
+                          width: 18,
+                          fit: BoxFit.cover,
                         ),
-                        const SizedBox(
-                          width: 8,
-                        ),
-                        Text(details.name,
-                            style: const TextStyle(
-                                fontSize: 10, fontWeight: FontWeight.bold)),
-                      ],
-                    );
-                  },
+                      ),
+                      const SizedBox(
+                        width: 8,
+                      ),
+                      Text(_name,
+                          style: const TextStyle(
+                              fontSize: 10, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
                 ),
                 Text(
                   formatFromNow(widget.post.postTime),
@@ -138,7 +117,7 @@ class _PostItemState extends State<PostItem> {
               child: Text(
                 widget.post.postText,
                 style:
-                    const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
             ),
             Visibility(
@@ -161,12 +140,9 @@ class _PostItemState extends State<PostItem> {
               height: 16,
             ),
             Text(
-              "${widget.post.likeCount} Likes • ${widget.post.postComments?.length ?? 0} Comments",
+              "${widget.post.likeCount} Like${widget.post.likeCount == 1 ? "" : "s"} • ${widget.post.postComments?.length ?? 0} Comment${(widget.post.postComments != null && widget.post.postComments!.length == 1) ? "" : "s"}",
               style: const TextStyle(
                   color: kGray, fontSize: 12, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(
-              height: 8,
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -185,27 +161,45 @@ class _PostItemState extends State<PostItem> {
                       child: (widget.post.postLikes != null &&
                               widget.post.postLikes!
                                   .contains(_auth.currentUser!.uid))
-                          ? SvgPicture.asset(
-                              "images/filled-heart.svg",
-                              semanticsLabel: "heart",
-                              height: 18,
-                              width: 18,
+                          ? Padding(
+                              padding: const EdgeInsets.fromLTRB(0, 8, 8, 16),
+                              child: SvgPicture.asset(
+                                "images/filled-heart.svg",
+                                semanticsLabel: "heart",
+                                height: 18,
+                                width: 18,
+                              ),
                             )
-                          : SvgPicture.asset(
-                              "images/heart.svg",
-                              semanticsLabel: "heart",
-                              height: 18,
-                              width: 18,
+                          : Padding(
+                              padding: const EdgeInsets.fromLTRB(0, 8, 8, 16),
+                              child: SvgPicture.asset(
+                                "images/heart.svg",
+                                semanticsLabel: "heart",
+                                height: 18,
+                                width: 18,
+                              ),
                             ),
                     ),
-                    const SizedBox(
-                      width: 8,
-                    ),
-                    SvgPicture.asset(
-                      "images/comment.svg",
-                      semanticsLabel: "heart",
-                      height: 18,
-                      width: 18,
+                    GestureDetector(
+                      onTap: () {
+                        showModalBottomSheet(
+                            context: context,
+                            builder: (context) => CommentModal(
+                                  post: widget.post,
+                                ),
+                            enableDrag: true,
+                            isScrollControlled: true,
+                            useSafeArea: true);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 8, 0, 16),
+                        child: SvgPicture.asset(
+                          "images/comment.svg",
+                          semanticsLabel: "comment",
+                          height: 18,
+                          width: 18,
+                        ),
+                      ),
                     ),
                   ],
                 ),
