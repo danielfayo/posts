@@ -4,7 +4,7 @@ import 'package:posts/models/comment.dart';
 class Post {
   factory Post.fromFirestore(DocumentSnapshot<Map<String, dynamic>> snapshot) {
     final data = snapshot.data();
-    final postComments = data?["comment"];
+    final postComments = data?["postComments"];
     final postLikes = data?["postLikes"];
     return Post(
       postId: data?["postId"],
@@ -14,8 +14,9 @@ class Post {
       postTime: data?["postTime"],
       likeCount: data?["likeCount"],
       postLikes: postLikes is Iterable ? List<String>.from(postLikes) : null,
-      postComments:
-          postComments is Iterable ? List<Comment>.from(postComments.map((e) => Comment.fromMap(e))) : null,
+      postComments: postComments is Iterable
+          ? List<Comment>.from(postComments.map((e) => Comment.fromMap(e)))
+          : null,
     );
   }
 
