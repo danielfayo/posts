@@ -49,6 +49,7 @@ flutter:
     - images/comment.svg
     - images/heart.svg
     - images/options.svg
+    - images/placeholder.png
     - images/filled-heart.svg
 
   # fonts:
