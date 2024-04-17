@@ -11,6 +11,6 @@ Future<ProfileDetails> getProfileDetails(String uid) async {
     email: doc["email"],
     name: doc["name"],
     profilePhoto: doc["profilePhoto"],
+    uid: doc["uid"],
   );
-
 }

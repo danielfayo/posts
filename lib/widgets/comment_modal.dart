@@ -143,7 +143,8 @@ class _CommentModalState extends State<CommentModal> {
                         setState(() {
                           _commentText = value;
                         });
-                      }),
+                      },
+                      ),
                 ),
                 const SizedBox(
                   width: 16,
