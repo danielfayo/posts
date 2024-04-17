@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:posts/constants/colors.dart';
 
 class TextInput extends StatelessWidget {
-  TextInput(
-      {super.key,
-      required this.controller,
-      required this.enabled,
-      required this.onChanged});
+  const TextInput({
+    super.key,
+    required this.controller,
+    required this.enabled,
+    required this.onChanged,
+  });
 
-  bool enabled;
-  void Function(String)? onChanged;
-  TextEditingController controller;
+  final bool enabled;
+  final void Function(String)? onChanged;
+  final TextEditingController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +20,9 @@ class TextInput extends StatelessWidget {
       enabled: enabled,
       controller: controller,
       maxLines: null,
+      onTapOutside: (event) {
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
       decoration: InputDecoration(
         filled: true,
         fillColor: kWhite,
