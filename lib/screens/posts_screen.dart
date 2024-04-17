@@ -21,7 +21,6 @@ class PostsScreen extends StatefulWidget {
 class _PostsScreenState extends State<PostsScreen> {
   final _db = FirebaseFirestore.instance;
   bool _fetchingPosts = false;
-  late PostProvider _postProvider;
 
   void fetchPosts() async {
     try {
@@ -29,11 +28,8 @@ class _PostsScreenState extends State<PostsScreen> {
         _fetchingPosts = true;
       });
 
-      await _db
-          .collection("posts")
-          .orderBy("postTime", descending: true)
-          .get()
-          .then((querySnapsot) {
+      await _db.collection("posts").orderBy("postTime").get().then(
+          (querySnapsot) {
         for (var docSnapshot in querySnapsot.docs) {
           final postsData = Post.fromFirestore(
               docSnapshot as DocumentSnapshot<Map<String, dynamic>>);
@@ -77,13 +73,6 @@ class _PostsScreenState extends State<PostsScreen> {
   void initState() {
     super.initState();
     fetchPosts();
-    _postProvider = Provider.of<PostProvider>(context, listen: false);
-  }
-
-  @override
-  void dispose() {
-    _postProvider.clearState();
-    super.dispose();
   }
 
   @override
@@ -137,30 +126,32 @@ class _PostsScreenState extends State<PostsScreen> {
           ),
         ),
       ),
-      body: SafeArea(child: Consumer<PostProvider>(
-        builder: (context, postData, child) {
-          if (_fetchingPosts) {
-            return const Center(
-              child: CircularLoader(),
-            );
-          }
+      body: SafeArea(
+        child: Consumer<PostProvider>(
+          builder: (context, postData, child) {
+            if (_fetchingPosts) {
+              return const Center(
+                child: CircularLoader(),
+              );
+            }
 
-          return ListView.separated(
-            separatorBuilder: (context, index) {
-              return const SizedBox(
-                height: 16,
-              );
-            },
-            padding: const EdgeInsets.all(16),
-            itemBuilder: (context, index) {
-              return PostItem(
-                post: postData.posts[index],
-              );
-            },
-            itemCount: postData.posts.length,
-          );
-        },
-      )),
+            return ListView.separated(
+              separatorBuilder: (context, index) {
+                return const SizedBox(
+                  height: 16,
+                );
+              },
+              padding: const EdgeInsets.all(16),
+              itemBuilder: (context, index) {
+                return PostItem(
+                  post: postData.posts[index],
+                );
+              },
+              itemCount: postData.posts.length,
+            );
+          },
+        ),
+      ),
     );
   }
 }
