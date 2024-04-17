@@ -21,7 +21,7 @@ class PrimaryButton extends StatelessWidget {
         foregroundColor: MaterialStatePropertyAll(kWhite),
         shape: MaterialStatePropertyAll(
           RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(4)),
+            borderRadius: BorderRadius.all(Radius.circular(24)),
           ),
         ),
       ),
