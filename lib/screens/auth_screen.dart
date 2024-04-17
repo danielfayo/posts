@@ -36,14 +36,15 @@ class AuthScreen extends StatelessWidget {
           await _firestore.collection('users').doc(user.uid).set({
             "name": user.displayName,
             "email": user.email,
-            "profilePhoto": user.photoURL
+            "profilePhoto": user.photoURL,
+            "uid": user.uid
           });
         }
 
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => HomeScreen(),
+            builder: (context) => const App(),
           ),
         );
       }
