@@ -12,7 +12,8 @@ class PostProvider extends ChangeNotifier {
   }
 
   void addPost(Post newPost) {
-    _posts.add(newPost);
+    // _posts.add(newPost);
+    _posts = [newPost, ..._posts];
     notifyListeners();
   }
 
@@ -44,6 +45,11 @@ class PostProvider extends ChangeNotifier {
     } else {
       post.postComments!.add(comment);
     }
+    notifyListeners();
+  }
+
+  void deletePost(Post post) {
+    _posts.remove(post);
     notifyListeners();
   }
 }
