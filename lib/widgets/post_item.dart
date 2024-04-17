@@ -1,13 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:posts/constants/colors.dart';
 import 'package:posts/models/post.dart';
 import 'package:posts/providers/posts_provider.dart';
+import 'package:posts/screens/user_profile_screen.dart';
 import 'package:posts/utilites/format_time.dart';
 import 'package:posts/utilites/get_profile_detals.dart';
 import 'package:posts/widgets/comment_modal.dart';
+import 'package:posts/widgets/post_options_modal.dart';
 import 'package:posts/widgets/toast.dart';
 import 'package:provider/provider.dart';
 
@@ -86,19 +89,44 @@ class _PostItemState extends State<PostItem> {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8.0),
-                        child: Image.network(
-                          _photoUrl,
-                          height: 18,
+                        child: FadeInImage(
+                          placeholder:
+                              const AssetImage("images/placeholder.png"),
+                          imageErrorBuilder: (context, error, stackTrace) {
+                            return Image.asset(
+                              'images/placeholder.png',
+                              fit: BoxFit.fitWidth,
+                              width: 18,
+                              height: 18,
+                            );
+                          },
                           width: 18,
-                          fit: BoxFit.cover,
+                          height: 18,
+                          image: Image.network(
+                            _photoUrl,
+                            height: 18,
+                            width: 18,
+                            fit: BoxFit.cover,
+                          ).image,
                         ),
                       ),
                       const SizedBox(
                         width: 8,
                       ),
-                      Text(_name,
-                          style: const TextStyle(
-                              fontSize: 10, fontWeight: FontWeight.bold)),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => UserProfileScreen(
+                                  userId: widget.post.postOwnerId),
+                            ),
+                          );
+                        },
+                        child: Text(_name,
+                            style: const TextStyle(
+                                fontSize: 10, fontWeight: FontWeight.bold)),
+                      ),
                     ],
                   ),
                 ),
@@ -116,8 +144,8 @@ class _PostItemState extends State<PostItem> {
               visible: widget.post.postText.isNotEmpty,
               child: Text(
                 widget.post.postText,
-                style:
-                    const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                    fontSize: 14, fontWeight: FontWeight.w500, height: 1.2),
               ),
             ),
             Visibility(
@@ -127,11 +155,25 @@ class _PostItemState extends State<PostItem> {
                   const SizedBox(
                     height: 16,
                   ),
-                  Image.network(
-                    widget.post.postImage,
+                  FadeInImage(
+                    placeholder: const AssetImage("images/placeholder.png"),
+                    imageErrorBuilder: (context, error, stackTrace) {
+                      return Image.asset(
+                        'images/placeholder.png',
+                        fit: BoxFit.fitWidth,
+                        width: double.infinity,
+                        height: 224,
+                      );
+                    },
                     width: double.infinity,
                     height: 224,
                     fit: BoxFit.cover,
+                    image: Image.network(
+                      widget.post.postImage,
+                      width: double.infinity,
+                      height: 224,
+                      fit: BoxFit.cover,
+                    ).image,
                   )
                 ],
               ),
@@ -149,8 +191,13 @@ class _PostItemState extends State<PostItem> {
               children: [
                 Row(
                   children: [
-                    GestureDetector(
-                      onTap: () {
+                    IconButton(
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.fromLTRB(0, 8, 8, 16),
+                      style: const ButtonStyle(
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: () {
                         handleLikingPost(widget.post, _auth.currentUser!.uid)
                             .then((value) {
                           Provider.of<PostProvider>(context, listen: false)
@@ -158,30 +205,29 @@ class _PostItemState extends State<PostItem> {
                                   widget.post, _auth.currentUser!.uid);
                         });
                       },
-                      child: (widget.post.postLikes != null &&
+                      icon: (widget.post.postLikes != null &&
                               widget.post.postLikes!
                                   .contains(_auth.currentUser!.uid))
-                          ? Padding(
-                              padding: const EdgeInsets.fromLTRB(0, 8, 8, 16),
-                              child: SvgPicture.asset(
-                                "images/filled-heart.svg",
-                                semanticsLabel: "heart",
-                                height: 18,
-                                width: 18,
-                              ),
+                          ? SvgPicture.asset(
+                              "images/filled-heart.svg",
+                              semanticsLabel: "heart",
+                              height: 18,
+                              width: 18,
                             )
-                          : Padding(
-                              padding: const EdgeInsets.fromLTRB(0, 8, 8, 16),
-                              child: SvgPicture.asset(
-                                "images/heart.svg",
-                                semanticsLabel: "heart",
-                                height: 18,
-                                width: 18,
-                              ),
+                          : SvgPicture.asset(
+                              "images/heart.svg",
+                              semanticsLabel: "heart",
+                              height: 18,
+                              width: 18,
                             ),
                     ),
-                    GestureDetector(
-                      onTap: () {
+                    IconButton(
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
+                      style: const ButtonStyle(
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: () {
                         showModalBottomSheet(
                             context: context,
                             builder: (context) => CommentModal(
@@ -191,24 +237,35 @@ class _PostItemState extends State<PostItem> {
                             isScrollControlled: true,
                             useSafeArea: true);
                       },
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(8, 8, 0, 16),
-                        child: SvgPicture.asset(
-                          "images/comment.svg",
-                          semanticsLabel: "comment",
-                          height: 18,
-                          width: 18,
-                        ),
+                      icon: SvgPicture.asset(
+                        "images/comment.svg",
+                        semanticsLabel: "comment",
+                        height: 18,
+                        width: 18,
                       ),
                     ),
                   ],
                 ),
-                SvgPicture.asset(
-                  "images/options.svg",
-                  semanticsLabel: "options",
-                  height: 6,
-                  width: 12,
-                ),
+                IconButton(
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        builder: (context) => SingleChildScrollView(
+                          child: Container(
+                            padding: EdgeInsets.only(
+                              bottom: MediaQuery.of(context).viewInsets.bottom,
+                            ),
+                            child: PostOptionsModal(
+                              userOwnsPost: widget.post.postOwnerId ==
+                                  _auth.currentUser!.uid,
+                              post: widget.post,
+                            ),
+                          ),
+                        ),
+                        isScrollControlled: true,
+                      );
+                    },
+                    icon: const Icon(Icons.more_horiz)),
               ],
             )
           ],
