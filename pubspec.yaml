@@ -25,12 +25,29 @@ dependencies:
   modal_progress_hud_nsn: ^0.5.0
   intl: ^0.17.0
   provider: ^6.1.2
+  flutter_native_splash: ^2.2.19
+
+flutter_native_splash:
+  android: true
+  ios: true
+  web: false
+  color: "#F7F4EE"
+  image: "images/rows.png"
+
+flutter_launcher_icons:
+  android: true
+  ios: "AppIcon"
+  image_path: "images/app_icon.png"
+  remove_alpha_ios: true
+  adaptive_icon_foreground: "images/icon_foreground.png"
+  adaptive_icon_background: "#1D3630" 
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   flutter_lints: ^3.0.0
+  flutter_launcher_icons: "^0.13.1"
 
 flutter:
 
