@@ -1,17 +1,20 @@
-# posts
+# Posts
 
-Posts is a dynamic CRUD application that allows users create accounts using Google, create posts, comment and like other users' posts, and manage their posts.
+Posts is a dynamic CRUD application that allows users to create accounts using Google, create posts, comment and like other users' posts, and manage their posts.
 
-#Key Features:
--Google Account Integration: Sign up and log in using Google.
--Post Creation: Share posts with the community using text and or photo.
--Post Engagment: Engage with posts by commenting on and liking posts.
--Post Management: Users can manage their posts by deleting them.
+## Key Features:
 
-#Technologies used:
--Flutter
--Firebase authentication
--Firebase firestore
+- **Google Account Integration:** Sign up and log in using Google.
+- **Post Creation:** Share posts with the community using text and/or photo.
+- **Post Engagement:** Engage with posts by commenting on and liking posts.
+- **Post Management:** Users can manage their posts by deleting them.
+
+## Technologies used:
+
+- Flutter
+- Firebase authentication
+- Firebase Firestore
+
 
 ## Getting Started
 
